@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <VINTAGE_STORY_PATH>[YOUR PATH HERE, es: C:\Users\User\AppData\Roaming\Vintagestory]</VINTAGE_STORY_PATH>
+  </PropertyGroup>
+</Project>

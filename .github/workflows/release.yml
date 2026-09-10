@@ -1,0 +1,204 @@
+name: Build and Release Mod
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      VS_INSTALL: ${{ github.workspace }}/Vintagestory
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Load and Validate Configuration
+        id: config
+        run: |
+          set -euo pipefail
+
+          if [ ! -f build.env ]; then
+            echo "::error file=build.env::build.env file not found in repository root."
+            exit 1
+          fi
+
+          set -a
+          source build.env
+          set +a
+
+          REQUIRED_VARS=(
+            "PROJECT_PATH"
+            "VS_VERSION"
+            "VS_DOWNLOAD_URL_TEMPLATE"
+            "BUILD_CONFIGURATION"
+            "CHANGELOG_PATH"
+          )
+
+          for VAR in "${REQUIRED_VARS[@]}"; do
+            if [ -z "${!VAR:-}" ]; then
+              echo "::error file=build.env::Missing required variable '$VAR' in build.env"
+              exit 1
+            fi
+          done
+
+          if [ ! -f "$PROJECT_PATH" ]; then
+            echo "::error file=build.env::Project file specified in PROJECT_PATH does not exist: $PROJECT_PATH"
+            exit 1
+          fi
+
+          if [ ! -f "$CHANGELOG_PATH" ]; then
+            echo "::error file=build.env::Changelog file specified in CHANGELOG_PATH does not exist: $CHANGELOG_PATH"
+            exit 1
+          fi
+
+          # Extract TargetFramework directly from .csproj
+          FRAMEWORK=$(sed -n 's/.*<TargetFramework>\(.*\)<\/TargetFramework>.*/\1/p' "$PROJECT_PATH" | tr -d '\r\n')
+          if [ -z "$FRAMEWORK" ]; then
+            echo "::error file=$PROJECT_PATH::Could not extract <TargetFramework> from project file."
+            exit 1
+          fi
+
+          # Convert target framework to setup-dotnet version string (net10.0 -> 10.0.x)
+          DOTNET_VER=$(echo "$FRAMEWORK" | sed -E 's/net([0-9]+)\.([0-9]+).*/\1.\2.x/')
+
+          # Extract AssemblyName or fallback to filename
+          ASSEMBLY=$(sed -n 's/.*<AssemblyName>\(.*\)<\/AssemblyName>.*/\1/p' "$PROJECT_PATH" | tr -d '\r\n')
+          if [ -z "$ASSEMBLY" ]; then
+            ASSEMBLY=$(basename "$PROJECT_PATH" .csproj)
+          fi
+
+          PROJECT_DIR=$(dirname "$PROJECT_PATH")
+          MODINFO_PATH="${PROJECT_DIR}/modinfo.json"
+
+          # Extract game version string from modinfo.json or build.env
+          DETECTED_VS=""
+          if [ -f "$MODINFO_PATH" ]; then
+            DETECTED_VS=$(jq -r '.dependencies.game // empty' "$MODINFO_PATH" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -n1 || echo "")
+          fi
+
+          FINAL_VS_VER="${DETECTED_VS:-$VS_VERSION}"
+
+          # Replace version string inside template regardless of initial bash expansion
+          DOWNLOAD_URL="${VS_DOWNLOAD_URL_TEMPLATE//${VS_VERSION}/${FINAL_VS_VER}}"
+
+          echo "vs_version=${FINAL_VS_VER}" >> "$GITHUB_OUTPUT"
+          echo "download_url=${DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
+          echo "project_path=${PROJECT_PATH}" >> "$GITHUB_OUTPUT"
+          echo "project_dir=${PROJECT_DIR}" >> "$GITHUB_OUTPUT"
+          echo "target_framework=${FRAMEWORK}" >> "$GITHUB_OUTPUT"
+          echo "dotnet_version=${DOTNET_VER}" >> "$GITHUB_OUTPUT"
+          echo "assembly_name=${ASSEMBLY}" >> "$GITHUB_OUTPUT"
+          echo "build_config=${BUILD_CONFIGURATION}" >> "$GITHUB_OUTPUT"
+          echo "changelog_path=${CHANGELOG_PATH}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ steps.config.outputs.dotnet_version }}
+
+      - name: Cache Vintage Story Assemblies
+        id: cache-vs
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VS_INSTALL }}
+          key: vs-assemblies-${{ steps.config.outputs.vs_version }}
+
+      - name: Download Vintage Story Assemblies
+        if: steps.cache-vs.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "${VS_INSTALL}"
+          
+          URL="${{ steps.config.outputs.download_url }}"
+          echo "Downloading Vintage Story assemblies from: ${URL}"
+
+          if ! curl -sfSL "${URL}" | tar -xz -C "${VS_INSTALL}"; then
+            echo "::error::Failed to download Vintage Story assemblies from ${URL}."
+            exit 1
+          fi
+
+      - name: Build Project
+        run: |
+          set -euo pipefail
+          dotnet build "${{ steps.config.outputs.project_path }}" -c ${{ steps.config.outputs.build_config }} -p:VINTAGE_STORY_PATH="${VS_INSTALL}"
+
+      - name: Extract Release Notes from Changelog
+        run: |
+          set -euo pipefail
+          
+          TAG="${GITHUB_REF_NAME}"
+          VER="${TAG#v}"
+          CHANGELOG="${{ steps.config.outputs.changelog_path }}"
+          NOTES_FILE="release_notes.md"
+          touch "$NOTES_FILE"
+
+          awk -v ver="$VER" -v tag="$TAG" '
+            BEGIN { found=0 }
+            /^## / {
+              if (found) exit;
+              if (index($0, ver) > 0 || index($0, tag) > 0) { found=1; next }
+            }
+            found { print }
+          ' "$CHANGELOG" > "$NOTES_FILE"
+
+      - name: Package Mod Zip
+        id: package
+        run: |
+          set -euo pipefail
+          
+          PROJ_DIR="${{ steps.config.outputs.project_dir }}"
+          FRAMEWORK="${{ steps.config.outputs.target_framework }}"
+          ASSEMBLY="${{ steps.config.outputs.assembly_name }}"
+          BUILD_CONFIG="${{ steps.config.outputs.build_config }}"
+          
+          BUILD_OUTPUT="${PROJ_DIR}/bin/${BUILD_CONFIG}/${FRAMEWORK}"
+
+          if [ ! -d "$BUILD_OUTPUT" ]; then
+            echo "::error::Build output directory does not exist: ${BUILD_OUTPUT}"
+            exit 1
+          fi
+
+          if [ ! -f "${BUILD_OUTPUT}/modinfo.json" ]; then
+            echo "::error::modinfo.json was not output to ${BUILD_OUTPUT}. Ensure CopyToOutputDirectory is configured in .csproj."
+            exit 1
+          fi
+
+          if [ ! -f "${BUILD_OUTPUT}/${ASSEMBLY}.dll" ]; then
+            echo "::error::Compiled output ${BUILD_OUTPUT}/${ASSEMBLY}.dll was not found."
+            exit 1
+          fi
+
+          ZIP_NAME="${ASSEMBLY}_${GITHUB_REF_NAME}.zip"
+
+          (cd "${BUILD_OUTPUT}" && zip -r "${GITHUB_WORKSPACE}/${ZIP_NAME}" .)
+          
+          sha256sum "${ZIP_NAME}" > "${ZIP_NAME}.sha256"
+          echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish Step Summary
+        run: |
+          {
+            echo "### Release Asset Hashes"
+            echo '```'
+            cat "${{ steps.package.outputs.zip_name }}.sha256"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create GitHub Release Draft
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          body_path: release_notes.md
+          files: |
+            ${{ steps.package.outputs.zip_name }}
+            ${{ steps.package.outputs.zip_name }}.sha256

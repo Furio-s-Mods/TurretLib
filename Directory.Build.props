@@ -1,0 +1,12 @@
+<Project>
+  <!-- 1. Try uploading the private file if it exists -->
+  <Import Project="Directory.Build.props.user" Condition="Exists('Directory.Build.props.user')" />
+
+  <PropertyGroup>
+    <!-- 2. If it is not defined in the .user file, try the environment variable -->
+    <VINTAGE_STORY_PATH Condition="'$(VINTAGE_STORY_PATH)' == ''">$(VINTAGE_STORY)</VINTAGE_STORY_PATH>
+    
+    <!-- 3. Default (optional) -->
+    <!-- <VINTAGE_STORY_PATH Condition="'$(VINTAGE_STORY_PATH)' == ''">C:\AppData\Roaming\Vintagestory</VINTAGE_STORY_PATH> -->
+  </PropertyGroup>
+</Project>

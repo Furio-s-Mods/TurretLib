@@ -1,0 +1,12 @@
+{
+  "type": "code",
+  "modid": "turretlib",
+  "name": "Turret-lib",
+  "authors": ["Furio"],
+  "contributors": [  ],
+  "version": "1.0.0",
+  "description": "Mountable rotating stuff.",
+  "dependencies": {
+    "game": "1.22.0"
+  }
+}

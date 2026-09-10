@@ -1,0 +1,5 @@
+root = true
+
+[*.cs]
+# Disable the "Namespace does not match folder structure" warning (IDE0130)
+dotnet_diagnostic.IDE0130.severity = none

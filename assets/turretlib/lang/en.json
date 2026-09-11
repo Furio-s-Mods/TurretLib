@@ -1,0 +1,11 @@
+{
+  "turretlib:block-testballista-*": "New Ballista",
+
+  "turretlib:blockhelp-turret-mount": "Mount",
+  "turretlib:blockhelp-turret-pickup": "Hold Pick Up",
+  "turretlib:heldhelp-turret-place": "Hold Place",
+  "turretlib:ingameerror-occupied": "Seat already occupied!",
+  "turretlib:ingameerror-toofar": "You are too far away!",
+
+  "game:placefailure-tryplaceholdtosneak": "Hold Sneak to place"
+}

@@ -1,0 +1,127 @@
+{
+  "code": "testballista",
+  "class": "turretlib:BlockTurret",
+  "entityClass": "turretlib:BlockEntityTurret",
+  "sidesolid": { "all": false },
+  "variantgroups": [
+    {
+      "code": "material",
+      "states": [ "aged" ],
+      "loadFromProperties": "block/wood"
+    }
+  ],
+  "shape": { "base": "ballista:entity/land/ballista" },
+  "texturesByType": {
+    "*": {
+      "wood": { "base": "game:block/wood/debarked/{material}" },
+      "tinbronze": { "base": "game:block/metal/ingot/tinbronze" },
+      "rope": { "base": "game:item/resource/rope" },
+      "string": { "base": "game:item/resource/string" }
+    }
+  },
+//   "attributes": {
+//     "attachableToEntity": {
+//       "rotatable": true,
+//       "categoryCode": "heavy_weapon"
+    //   "properties": {
+    //     "baseOffset": { "x": 0.5, "y": 0, "z": 0.5 },
+    //     "baseRotation": { "x": 0, "y": 90, "z": 0 }
+    //   }
+//     }
+//   },
+  "behaviors": [
+    // { "name": "turretlib:2x2Attachable" },
+    { 
+      "name": "turretlib:ShiftDelayedPlace",
+      "properties": {
+        "RequiredPlaceTime": 1.0,
+        "LoadingSound": "game:sounds/block/woodcreak_2",
+        "DoneSound": "game:sounds/block/wood-tool"
+      }
+    },
+    { 
+      "name": "turretlib:ShiftDelayedPickUp" ,
+      "properties": {
+        "RequiredPickUpTime": 1.0,
+        "LoadingSound": "game:sounds/block/woodcreak_2",
+        "DoneSound": "game:sounds/block/wood-tool"
+      }
+    },
+    { 
+      "name": "turretlib:TurretMountable", 
+      "properties": {
+        "MountMaxDistance": 2.8,
+        "EyeHeight": 1.5,
+        "SeatDistance": 1.4,
+        "CameraDistanceOffset": 0.05,
+        "RiderOffset": { "x": 0.5, "y": 0.375, "z": -0.5 },
+        "SeatOffset": { "x": 0.0, "y": 0.0, "z": 0.0 }
+      }
+    }
+  ],
+  "entityBehaviors": [
+    { "name": "Animatable" },
+    { 
+      "name": "turretlib:TurretAim",
+      "properties": {
+        "YawBoneName": "RotationalJoint",
+        "PitchBoneName": "MainWoodFrame",
+        "DefaultYaw": 0.0,
+        "DefaultPitch": 10.0,
+        "MinPitchDeg": -30.0,
+        "MaxPitchDeg": 50.0,
+        // "MinYawDeg": -180.0,
+        // "MaxYawDeg": 180.0,
+        "ModelYawOffsetDeg": 90.0
+      }
+    },
+    {
+      "name": "turretlib:TurretInventory",
+      "properties": {
+        "SlotCount": 1,
+        "AmmoDomain": "ballista",
+        "AmmoCodePrefix": "ballistabolt",
+        "InteractionCuboid": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 1.0, "z2": 1.0 },
+        "AmmoBoxCuboid": { "x1": 0.0, "y1": 1.0, "z1": 0.0, "x2": 1.0, "y2": 1.1, "z2": 1.0 }
+      }
+    },
+    { 
+      "name": "turretlib:TurretWeapon", 
+      "properties": {
+        "DamageMultiplier": 3.0,
+        "LoadSpeed": 0.7,
+        "LoadAnimationCode": "load",
+        "LoadSound": "game:sounds/bow-draw",
+        "FireSound": "game:sounds/bow-release",
+        "MuzzlePivotOffset": { "x": 0.5, "y": 1.5, "z": 0.5 },
+        "MuzzleForwardOffset": 0.8,
+        "DefaultProjectileEntityCode": "ballista:ballistabolt-{material}",
+        "ProjectileAttachmentPoints": [
+          "ProjectileAP",
+          "ProjctileAttach",
+          "Projectile"
+        ],
+        "ProjectileModelYOffsetDeg": -90.0,
+        "ProjectileTransform": {
+          "translation": { "x": 0.03125, "y": 0, "z": -0.5 },
+          "origin": { "x": 0.0, "y": 0.0, "z": 0.5 },
+          "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+          "scale": 0.65
+        }
+      }
+    }
+  ],
+  "heldPriorityInteract": true,
+  "resistance": 4.0,
+  "tool": "Axe",
+  "maxstacksize": 1,
+  "sideopaque": { "all": false },
+  "creativeinventory": { "general": [ "*" ] },
+  "guiTransform": {
+	"translation": { "x": 0, "y": 10.0, "z": 0 },
+    "scale": 0.8
+  },
+  "client": {
+    "renderer": "None"
+  }
+}

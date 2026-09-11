@@ -29,10 +29,10 @@
       <HintPath>$(VINTAGE_STORY_PATH)/Mods/VSEssentials.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- <Reference Include="cairo">
+    <Reference Include="cairo">
       <HintPath>$(VINTAGE_STORY_PATH)/Lib/cairo-sharp.dll</HintPath>
       <Private>false</Private>
-    </Reference> -->
+    </Reference>
     <!-- <Reference Include="VintagestoryLib">
       <HintPath>$(VINTAGE_STORY_PATH)/VintagestoryLib.dll</HintPath>
       <Private>false</Private>

@@ -1,6 +1,4 @@
 {
-  "turretlib:block-testballista-*": "New Ballista",
-
   "turretlib:blockhelp-turret-mount": "Mount",
   "turretlib:blockhelp-turret-pickup": "Hold Pick Up",
   "turretlib:heldhelp-turret-place": "Hold Place",

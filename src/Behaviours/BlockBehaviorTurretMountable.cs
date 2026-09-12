@@ -51,7 +51,7 @@ public class BlockBehaviorTurretMountable(Block block) : BlockBehavior(block)
                 // inventory.Api?.Logger.Notification($"[{inventory.Api.Side}] Player '{byPlayer.PlayerName}' interacted with Ammo Box at {blockSel.Position}");
                 handling = EnumHandling.PreventDefault;
                 bool result = inventory.OnAmmoBoxInteract(byPlayer);
-                inventory.Api?.Logger.Notification($"[{world.Side}] OnAmmoBoxInteract result: {result}");
+                // inventory.Api?.Logger.Notification($"[{world.Side}] OnAmmoBoxInteract result: {result}");
                 return result;
             }
         }

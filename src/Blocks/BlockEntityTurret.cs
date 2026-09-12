@@ -8,10 +8,10 @@ namespace TurretLib;
 
 public class BlockEntityTurret : BlockEntity, IMountable
 {
+    public BlockBehaviorTurretMountable? MountableBehavior { get; private set; }
     public BEBehaviorTurretAim AimBehavior { get; private set; } = null!;
     public BEBehaviorTurretInventory? InventoryBehavior { get; private set; }
     public BEBehaviorTurretWeapon? WeaponBehavior { get; private set; }
-    public BlockBehaviorTurretMountable? MountableBehavior { get; private set; }
     public BlockEntityAnimationUtil? AnimUtil { get; private set; }
 
     public float Yaw { get => AimBehavior.Yaw; }
@@ -59,10 +59,10 @@ public class BlockEntityTurret : BlockEntity, IMountable
     {
         base.Initialize(api);
 
+        MountableBehavior = Block.GetBehavior<BlockBehaviorTurretMountable>();
         AimBehavior = GetBehavior<BEBehaviorTurretAim>() 
             ?? throw new InvalidOperationException($"[{MainModSystem.ModId}] BlockEntity '{Block?.Code}' is missing required entity behavior 'turretlib:TurretAim'.");
         WeaponBehavior = GetBehavior<BEBehaviorTurretWeapon>();
-        MountableBehavior = GetBehavior<BlockBehaviorTurretMountable>();
         InventoryBehavior = GetBehavior<BEBehaviorTurretInventory>();
 
         internalSeat = new TurretSeat(this);

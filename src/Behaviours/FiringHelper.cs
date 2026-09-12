@@ -41,14 +41,16 @@ public static class FiringHelper
         JsonObject? itemAttribs = itemStackPeek.ItemAttributes;
         TurretWeaponProperties props = weaponBehaviour.Properties;
 
-        string material = itemStackPeek.Collectible.Variant?["material"] 
-               ?? itemStackPeek.Collectible.Variant?["metal"] 
-               ?? itemStackPeek.Collectible.Variant?["type"] 
-               ?? "unknown";
+        string material = itemStackPeek.Collectible.Variant["material"];
+        // string material = itemStackPeek.Collectible.Variant?["material"] 
+        //        ?? itemStackPeek.Collectible.Variant?["metal"] 
+        //        ?? itemStackPeek.Collectible.Variant?["type"] 
+        //        ?? "unknown";
 
-        logger.Notification($"[{MainModSystem.ModId}] Firing attempt with ammo '{itemStackPeek.Collectible.Code}', extracted material key: '{material}'");
+        // logger.Notification($"[{MainModSystem.ModId}] Firing attempt with ammo '{itemStackPeek.Collectible.Code}', extracted material key: '{material}'");
 
-        AssetLocation entityCode = ResolveEntityCode(itemStackPeek, itemAttribs, material, props.DefaultProjectileEntityCode, logger);
+        // AssetLocation entityCode = ResolveEntityCode(itemStackPeek, itemAttribs, material, props.DefaultProjectileEntityCode, logger);
+        AssetLocation entityCode = ammoSlot.Itemstack.Collectible.Code;
         if (entityCode == null) return;
 
         EntityProperties? entityType = api.World.GetEntityType(entityCode);
@@ -133,53 +135,53 @@ public static class FiringHelper
         return val;
     }
 
-    private static AssetLocation ResolveEntityCode(ItemStack itemStack, JsonObject? itemAttribs, string material, string? defaultPattern, ILogger logger)
-    {
-        AssetLocation ammoItemCode = itemStack.Collectible.Code;
-        string? path = null;
-        string source = "none";
+    // private static AssetLocation ResolveEntityCode(ItemStack itemStack, JsonObject? itemAttribs, string material, string? defaultPattern, ILogger logger)
+    // {
+    //     AssetLocation ammoItemCode = itemStack.Collectible.Code;
+    //     string? path = null;
+    //     string source = "none";
 
-        if (itemAttribs != null)
-        {
-            JsonObject? byType = itemAttribs["projectileEntityCodeByType"];
+    //     if (itemAttribs != null)
+    //     {
+    //         JsonObject? byType = itemAttribs["projectileEntityCodeByType"];
 
-            if (byType != null && byType.Exists)
-            {
-                path = byType[$"*-{material}"]?.AsString()
-                    ?? byType[material]?.AsString()
-                    ?? byType["*"]?.AsString();
+    //         if (byType != null && byType.Exists)
+    //         {
+    //             path = byType[$"*-{material}"]?.AsString()
+    //                 ?? byType[material]?.AsString()
+    //                 ?? byType["*"]?.AsString();
 
-                if (!string.IsNullOrEmpty(path)) source = "itemAttribs.byType";
-            }
+    //             if (!string.IsNullOrEmpty(path)) source = "itemAttribs.byType";
+    //         }
 
-            if (string.IsNullOrEmpty(path) && itemAttribs.KeyExists("projectileEntityCode"))
-            {
-                path = itemAttribs["projectileEntityCode"].AsString();
-                source = "itemAttribs.projectileEntityCode";
-            }
-        }
+    //         if (string.IsNullOrEmpty(path) && itemAttribs.KeyExists("projectileEntityCode"))
+    //         {
+    //             path = itemAttribs["projectileEntityCode"].AsString();
+    //             source = "itemAttribs.projectileEntityCode";
+    //         }
+    //     }
 
-        AssetLocation entityCode;
+    //     AssetLocation entityCode;
 
-        if (!string.IsNullOrEmpty(path))
-        {
-            if (path.Contains("{material}")) path = path.Replace("{material}", material);
+    //     if (!string.IsNullOrEmpty(path))
+    //     {
+    //         if (path.Contains($"{material}")) path = path.Replace($"{material}", material);
             
-            entityCode = path.Contains(':') 
-                ? new AssetLocation(path) 
-                : new AssetLocation(ammoItemCode.Domain, path);
-        }
-        else
-        {
-            logger.Notification($"[{MainModSystem.ModId}][ResolveEntityCode] fallback -> entityCode = ammoItemCode");
-            entityCode = ammoItemCode;
-            source = "ammo collectible code";
-        }
+    //         entityCode = path.Contains(':') 
+    //             ? new AssetLocation(path) 
+    //             : new AssetLocation(ammoItemCode.Domain, path);
+    //     }
+    //     else
+    //     {
+    //         logger.Notification($"[{MainModSystem.ModId}][ResolveEntityCode] fallback -> entityCode = ammoItemCode");
+    //         entityCode = ammoItemCode;
+    //         source = "ammo collectible code";
+    //     }
 
-        logger.Notification($"[{MainModSystem.ModId}] Resolved entity code: '{entityCode}' (Source: {source})");
+    //     logger.Notification($"[{MainModSystem.ModId}] Resolved entity code: '{entityCode}' (Source: {source})");
 
-        return entityCode;
-    }
+    //     return entityCode;
+    // }
 
     private static float ResolveBreakChance(JsonObject? itemAttribs, string material, float defaultChance = 0.15f)
     {

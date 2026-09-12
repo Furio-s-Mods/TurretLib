@@ -47,9 +47,9 @@
     <None Include="modinfo.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <!-- <None Include="modicon.png">
+    <None Include="modicon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None> -->
+    </None>
     <None Include="assets\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

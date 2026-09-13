@@ -4,7 +4,7 @@
   "name": "Turret-lib",
   "authors": ["Furio"],
   "contributors": [  ],
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Mountable rotating stuff.",
   "dependencies": {
     "game": "1.22.0"

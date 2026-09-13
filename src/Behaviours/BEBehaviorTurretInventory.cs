@@ -10,7 +10,9 @@ public class BEBehaviorTurretInventory(BlockEntity blockentity) : BEBehaviorTurr
     public BETurretProjectileRenderer? ProjectileRenderer { get; private set; }
     public InventoryGeneric Inventory { get; private set; } = null!;
 
-    public bool HasProjectile => Inventory != null && !Inventory[0].Empty;
+    public const int MainAmmoIndex = 0;
+    public ItemSlot? MainAmmoSlot => Inventory?[MainAmmoIndex];
+    public bool HasProjectile => MainAmmoSlot != null && !MainAmmoSlot.Empty;
 
     public override void Initialize(ICoreAPI api, JsonObject properties)
     {
@@ -33,9 +35,9 @@ public class BEBehaviorTurretInventory(BlockEntity blockentity) : BEBehaviorTurr
             capi.Event.RegisterRenderer(ProjectileRenderer, EnumRenderStage.ShadowFar);
             capi.Event.RegisterRenderer(ProjectileRenderer, EnumRenderStage.ShadowNear);
 
-            NotifyInventoryChanged(0);
+            NotifyInventoryChanged(MainAmmoIndex);
             Inventory.SlotModified += NotifyInventoryChanged;
-            ProjectileRenderer.UpdateMesh(Inventory[0].Itemstack);
+            ProjectileRenderer.UpdateMesh(Inventory[MainAmmoIndex].Itemstack);
         }
     }
 
@@ -63,14 +65,14 @@ public class BEBehaviorTurretInventory(BlockEntity blockentity) : BEBehaviorTurr
 
     public ItemStack? ConsumeAmmo(int count = 1)
     {
-        ItemSlot? slot = Inventory?[0];
+        ItemSlot? slot = MainAmmoSlot;
         if (slot == null) return null;
 
         ItemStack consumed = slot.TakeOut(count);
         slot.MarkDirty();
         Blockentity.MarkDirty(true);
         
-        NotifyInventoryChanged(0);
+        NotifyInventoryChanged(MainAmmoIndex);
         return consumed;
     }
 
@@ -111,7 +113,7 @@ public class BEBehaviorTurretInventory(BlockEntity blockentity) : BEBehaviorTurr
         {
             if (Api.Side == EnumAppSide.Server)
             {
-                ItemSlot? ammoSlot = Inventory?[0];
+                ItemSlot? ammoSlot = MainAmmoSlot;
                 if (ammoSlot != null && !ammoSlot.Empty && player.InventoryManager != null)
                 {
                     ItemStack stackToGive = ammoSlot.TakeOut(1);
@@ -123,7 +125,7 @@ public class BEBehaviorTurretInventory(BlockEntity blockentity) : BEBehaviorTurr
                         Api.World.SpawnItemEntity(stackToGive, Blockentity.Pos.ToVec3d().Add(0.5, 1.0, 0.5));
                     }
 
-                    NotifyInventoryChanged(0);
+                    NotifyInventoryChanged(MainAmmoIndex);
                 }
             }
             return true;
@@ -135,12 +137,12 @@ public class BEBehaviorTurretInventory(BlockEntity blockentity) : BEBehaviorTurr
             {
                 if (Api.Side == EnumAppSide.Server)
                 {
-                    Inventory[0].Itemstack = activeSlot.TakeOut(1);
-                    Inventory[0].MarkDirty();
+                    Inventory[MainAmmoIndex].Itemstack = activeSlot.TakeOut(1);
+                    Inventory[MainAmmoIndex].MarkDirty();
                     activeSlot.MarkDirty();
                     Blockentity.MarkDirty(true);
 
-                    NotifyInventoryChanged(0);
+                    NotifyInventoryChanged(MainAmmoIndex);
                 }
                 return true;
             }
@@ -177,7 +179,7 @@ public class BEBehaviorTurretInventory(BlockEntity blockentity) : BEBehaviorTurr
 
             if (worldForResolving.Side == EnumAppSide.Client)
             {
-                ProjectileRenderer?.UpdateMesh(Inventory[0].Itemstack);
+                ProjectileRenderer?.UpdateMesh(Inventory[MainAmmoIndex].Itemstack);
             }
         }
     }

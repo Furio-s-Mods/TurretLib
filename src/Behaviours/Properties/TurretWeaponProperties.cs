@@ -9,7 +9,10 @@ public class TurretWeaponProperties : TurretPropertiesBase
     public float DamageMultiplier { get; set; } = 1f;
     public float ProjectilePropulsionForce { get; set; } = 1.0f;
     public float DefaultBreakChance { get; set; } = 0.15f;
+    public float DefaultBaseDamage { get; set; } = 0f;
+    public int DefaultDamageTier { get; set; } = 0;
     public int MaxAmmoConsumedPerShot { get; set; } = 1;
+    public string DefaultVariant { get; set; } = "unknown";
 
     // Loading & Timing
     public float LoadSpeed { get; set; }

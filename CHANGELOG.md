@@ -2,7 +2,8 @@
 
 ## 1.0.1
 NEW:
-- 
+- More robust attribute extraction and fallback default logic and logging
+- Exposed more weapon properties: firing sound params, ProjectilePropulsionForce
 
 ## 1.0.0
 NEW:

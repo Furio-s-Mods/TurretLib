@@ -43,7 +43,7 @@ public static class FiringHelper
         JsonObject? itemAttribs = itemStackPeek.ItemAttributes;
 
         // Resolve Variant / Material
-        string material = ExtractVariant(itemStackPeek, props.VariantKeys);
+        string material = ExtractVariant(itemStackPeek, props.VariantKeys, props.DefaultVariant);
 
         // Resolve Entity Code
         AssetLocation entityCode = ResolveEntityCode(itemStackPeek, itemAttribs, material, props, logger);
@@ -71,16 +71,16 @@ public static class FiringHelper
         }
         weaponBehaviour.Blockentity.MarkDirty(true);
 
-        // Update these attribute calculation calls in ServerExecuteFire:
+        // Calculate Abstracted Attributes
         string itemCodePath = itemStackPeek.Collectible.Code.Path;
 
-        float baseDamage = GetAttributeFloat(itemAttribs, blockAttribs, props.DamageAttributeKey, itemCodePath, material, 0f);
+        float baseDamage = GetAttributeFloat(itemAttribs, blockAttribs, props.DamageAttributeKey, itemCodePath, material, props.DefaultBaseDamage, logger);
         float damage = baseDamage * props.DamageMultiplier;
-        int damageTier = GetAttributeInt(itemAttribs, blockAttribs, props.DamageTierAttributeKey, itemCodePath, material, 0);
-        float propulsion = GetAttributeFloat(itemAttribs, blockAttribs, props.PropulsionAttributeKey, itemCodePath, material, props.ProjectilePropulsionForce);
-        float breakChance = GetAttributeFloat(itemAttribs, blockAttribs, props.BreakChanceAttributeKey, itemCodePath, material, props.DefaultBreakChance);
+        int damageTier = GetAttributeInt(itemAttribs, blockAttribs, props.DamageTierAttributeKey, itemCodePath, material, props.DefaultDamageTier, logger);
+        float propulsion = GetAttributeFloat(itemAttribs, blockAttribs, props.PropulsionAttributeKey, itemCodePath, material, props.ProjectilePropulsionForce, logger);
+        float breakChance = GetAttributeFloat(itemAttribs, blockAttribs, props.BreakChanceAttributeKey, itemCodePath, material, props.DefaultBreakChance, logger);
 
-        logger.Notification($"[{MainModSystem.ModId}] Firing Debug -> Material: '{material}' | BaseDamage: {baseDamage} | Multiplier: {props.DamageMultiplier} | FinalDamage: {damage} | Propulsion: {propulsion}");
+        // logger.Notification($"[{MainModSystem.ModId}] Firing Debug -> Material: '{material}' | BaseDamage: {baseDamage} | Multiplier: {props.DamageMultiplier} | FinalDamage: {damage} | Propulsion: {propulsion}");
 
         // Initialize Entity Properties
         projectileEntity.World = api.World;
@@ -119,7 +119,14 @@ public static class FiringHelper
 
     #region Helper Methods
 
-    private static float GetAttributeFloat(JsonObject? itemAttr, JsonObject? blockAttr, string attrKey, string itemCodePath, string material, float defaultValue)
+    private static float GetAttributeFloat(
+        JsonObject? itemAttr, 
+        JsonObject? blockAttr, 
+        string attrKey, 
+        string itemCodePath, 
+        string material, 
+        float defaultValue, 
+        ILogger logger)
     {
         if (string.IsNullOrEmpty(attrKey)) return defaultValue;
 
@@ -127,7 +134,7 @@ public static class FiringHelper
         if (TryExtractValue(itemAttr, attrKey, itemCodePath, material, out float itemVal)) return itemVal;
         if (TryExtractValue(blockAttr, attrKey, itemCodePath, material, out float blockVal)) return blockVal;
 
-        // Dynamic fallback: toggle "ByType" suffix to handle differences across item JSON definitions
+        // Dynamic fallback: toggle "ByType" suffix
         string fallbackKey = attrKey.EndsWith("ByType", StringComparison.OrdinalIgnoreCase)
             ? attrKey.Substring(0, attrKey.Length - 6)
             : attrKey + "ByType";
@@ -135,17 +142,27 @@ public static class FiringHelper
         if (TryExtractValue(itemAttr, fallbackKey, itemCodePath, material, out float fbItemVal)) return fbItemVal;
         if (TryExtractValue(blockAttr, fallbackKey, itemCodePath, material, out float fbBlockVal)) return fbBlockVal;
 
+        // Log warning when all extraction steps fail
+        logger.Warning($"[{MainModSystem.ModId}] Attribute key '{attrKey}' (and fallback '{fallbackKey}') could not be resolved for '{itemCodePath}' [material: '{material}']. Falling back to default value: {defaultValue}");
+
         return defaultValue;
     }
 
-    private static int GetAttributeInt(JsonObject? itemAttr, JsonObject? blockAttr, string attrKey, string itemCodePath, string material, int defaultValue)
+    private static int GetAttributeInt(
+        JsonObject? itemAttr, 
+        JsonObject? blockAttr, 
+        string attrKey, 
+        string itemCodePath, 
+        string material, 
+        int defaultValue, 
+        ILogger logger)
     {
-        return (int)GetAttributeFloat(itemAttr, blockAttr, attrKey, itemCodePath, material, defaultValue);
+        return (int)GetAttributeFloat(itemAttr, blockAttr, attrKey, itemCodePath, material, defaultValue, logger);
     }
 
-    private static string ExtractVariant(ItemStack itemStack, string[] variantKeys)
+    private static string ExtractVariant(ItemStack itemStack, string[] variantKeys, string defaultVariant)
     {
-        if (itemStack?.Collectible?.Variant == null) return "unknown";
+        if (itemStack?.Collectible?.Variant == null) return defaultVariant;
 
         foreach (string key in variantKeys)
         {
@@ -155,7 +172,7 @@ public static class FiringHelper
             }
         }
 
-        return "unknown";
+        return defaultVariant;
     }
 
     private static AssetLocation ResolveEntityCode(ItemStack itemStack, JsonObject? itemAttribs, string material, TurretWeaponProperties props, ILogger logger)
@@ -206,7 +223,7 @@ public static class FiringHelper
         JsonObject token = attributes[key];
         if (!token.Exists) return false;
 
-        // Handle single primitive scalar values (e.g. "damage": 12.0)
+        // Handle single primitive scalar values
         if (token.Token is JValue)
         {
             value = token.AsFloat(0f);

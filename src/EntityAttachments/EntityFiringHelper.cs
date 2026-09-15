@@ -85,11 +85,14 @@ public static class EntityFiringHelper
 
         // 5. Attribute Extraction
         string itemCodePath = ammoStack.Collectible.Code.Path;
-        float baseDamage = GetAttributeFloat(itemAttribs, vehicleAttribs, props.DamageAttributeKey, itemCodePath, material, props.DefaultBaseDamage, logger);
-        float damage = baseDamage * props.DamageMultiplier;
+        float BaseDamage = props.BaseDamage;
+        float AmmoDamage = GetAttributeFloat(itemAttribs, vehicleAttribs, props.DamageAttributeKey, itemCodePath, material, props.DefaultAmmoDamage, logger);
+        float damage = (BaseDamage + AmmoDamage) * props.DamageMultiplier;
         int damageTier = GetAttributeInt(itemAttribs, vehicleAttribs, props.DamageTierAttributeKey, itemCodePath, material, props.DefaultDamageTier, logger);
         float propulsion = GetAttributeFloat(itemAttribs, vehicleAttribs, props.PropulsionAttributeKey, itemCodePath, material, props.ProjectilePropulsionForce, logger);
         float breakChance = GetAttributeFloat(itemAttribs, vehicleAttribs, props.BreakChanceAttributeKey, itemCodePath, material, props.DefaultBreakChance, logger);
+
+        // logger.Notification($"[{MainModSystem.ModId}] Firing Debug -> Material: '{material}' | BaseDamage: {BaseDamage} | AmmoDamage: {AmmoDamage} | Multiplier: {props.DamageMultiplier} | FinalDamage: {damage} | Propulsion: {propulsion}");
 
         // 6. Spatial Matrix & Trajectory Calculations
         float yaw = seat.TargetServerYaw;

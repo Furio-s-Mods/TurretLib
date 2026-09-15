@@ -74,13 +74,14 @@ public static class FiringHelper
         // Calculate Abstracted Attributes
         string itemCodePath = itemStackPeek.Collectible.Code.Path;
 
-        float baseDamage = GetAttributeFloat(itemAttribs, blockAttribs, props.DamageAttributeKey, itemCodePath, material, props.DefaultBaseDamage, logger);
-        float damage = baseDamage * props.DamageMultiplier;
+        float BaseDamage = props.BaseDamage;
+        float AmmoDamage = GetAttributeFloat(itemAttribs, blockAttribs, props.DamageAttributeKey, itemCodePath, material, props.DefaultAmmoDamage, logger);
+        float damage = (BaseDamage + AmmoDamage) * props.DamageMultiplier;
         int damageTier = GetAttributeInt(itemAttribs, blockAttribs, props.DamageTierAttributeKey, itemCodePath, material, props.DefaultDamageTier, logger);
         float propulsion = GetAttributeFloat(itemAttribs, blockAttribs, props.PropulsionAttributeKey, itemCodePath, material, props.ProjectilePropulsionForce, logger);
         float breakChance = GetAttributeFloat(itemAttribs, blockAttribs, props.BreakChanceAttributeKey, itemCodePath, material, props.DefaultBreakChance, logger);
 
-        // logger.Notification($"[{MainModSystem.ModId}] Firing Debug -> Material: '{material}' | BaseDamage: {baseDamage} | Multiplier: {props.DamageMultiplier} | FinalDamage: {damage} | Propulsion: {propulsion}");
+        // logger.Notification($"[{MainModSystem.ModId}] Firing Debug -> Material: '{material}' | BaseDamage: {BaseDamage} | AmmoDamage: {AmmoDamage} | Multiplier: {props.DamageMultiplier} | FinalDamage: {damage} | Propulsion: {propulsion}");
 
         // Initialize Entity Properties
         projectileEntity.World = api.World;

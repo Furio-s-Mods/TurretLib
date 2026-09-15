@@ -4,8 +4,8 @@
   "name": "Turret-lib",
   "authors": ["Furio"],
   "contributors": [  ],
-  "version": "1.0.1",
-  "description": "Mountable rotating stuff.",
+  "version": "1.1.0-pre.1",
+  "description": "Mountable rotating stuff. Now on Boats too!",
   "dependencies": {
     "game": "1.22.0"
   }

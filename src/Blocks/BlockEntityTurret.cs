@@ -61,7 +61,7 @@ public class BlockEntityTurret : BlockEntity, IMountable
 
         MountableBehavior = Block.GetBehavior<BlockBehaviorTurretMountable>();
         AimBehavior = GetBehavior<BEBehaviorTurretAim>() 
-            ?? throw new InvalidOperationException($"[{MainModSystem.ModId}] BlockEntity '{Block?.Code}' is missing required entity behavior 'turretlib:TurretAim'.");
+            ?? throw new InvalidOperationException($"[{MainModSystem.ModId}] BlockEntity '{Block.Code}' is missing required entity behavior 'turretlib:TurretAim' at {Pos}.");
         WeaponBehavior = GetBehavior<BEBehaviorTurretWeapon>();
         InventoryBehavior = GetBehavior<BEBehaviorTurretInventory>();
 

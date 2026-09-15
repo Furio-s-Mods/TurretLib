@@ -13,7 +13,7 @@
 ## IMPLEMENT
 
 -x blockentity
-- entity attachment
+-x entity attachment
 
 
 commands:

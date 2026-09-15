@@ -84,6 +84,31 @@ public class TurretWeaponProperties : TurretPropertiesBase
 
         RequireNotNull(ProjectileTransform, nameof(ProjectileTransform), blockCode);
     }
+
+    public static TurretWeaponProperties? FromStack(ItemStack? stack)
+    {
+        if (stack?.Collectible == null) return null;
+
+        // Direct Attribute check
+        if (stack.Collectible.Attributes?.KeyExists("weaponProps") == true)
+        {
+            return stack.Collectible.Attributes["weaponProps"].AsObject<TurretWeaponProperties>();
+        }
+
+        // Fallback check inside block entityBehaviors JSON definition
+        if (stack.Block?.BlockEntityBehaviors != null)
+        {
+            foreach (var behaviorProps in stack.Block.BlockEntityBehaviors)
+            {
+                if (behaviorProps.Name == "turretlib:TurretWeapon" || behaviorProps.Name == "TurretWeapon")
+                {
+                    return behaviorProps.properties?.AsObject<TurretWeaponProperties>();
+                }
+            }
+        }
+
+        return null;
+    }
 }
 
 public enum TurretWeaponState : byte

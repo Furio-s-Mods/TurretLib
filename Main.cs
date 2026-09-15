@@ -1,6 +1,6 @@
 using HarmonyLib;
-using Vintagestory.API.Client;
 using Vintagestory.API.Common;
+using Vintagestory.API.Client;
 using Vintagestory.API.Server;
 
 namespace TurretLib;
@@ -10,6 +10,7 @@ public partial class MainModSystem : ModSystem
     private Harmony? _harmony;
     private ICoreClientAPI? _capi;
     private ICoreServerAPI? _sapi;
+    private int disposed;
 
     public const string ModId = "turretlib";
     public const string PatchId = $"{ModId}.patches";
@@ -25,7 +26,7 @@ public partial class MainModSystem : ModSystem
         api.RegisterBlockClass($"{ModId}:BlockTurret", typeof(BlockTurret));
         api.RegisterBlockEntityClass($"{ModId}:BlockEntityTurret", typeof(BlockEntityTurret));
 
-        // api.RegisterCollectibleBehaviorClass($"{ModId}:2x2Attachable", typeof(CollectibleBehavior2x2Attachable));
+        api.RegisterCollectibleBehaviorClass($"{ModId}:2x2Attachable", typeof(CollectibleBehavior2x2Attachable));
         api.RegisterCollectibleBehaviorClass($"{ModId}:ShiftDelayedPlace", typeof(CollectibleBehaviorShiftDelayedPlace));
         api.RegisterBlockBehaviorClass($"{ModId}:ShiftDelayedPickUp", typeof(BlockBehaviorShiftDelayedPickup));
         api.RegisterBlockEntityBehaviorClass($"{ModId}:TurretInventory", typeof(BEBehaviorTurretInventory));
@@ -46,8 +47,11 @@ public partial class MainModSystem : ModSystem
             .RegisterMessageType<TurretStatePacket>()
             .SetMessageHandler<BESyncMessage>((player, message) => SyncHelper.HandleSyncRequest(message, api, player))
             .SetMessageHandler<TurretInputPacket>(OnServerInputPacket)
-            // .RegisterMessageType<SwivelRotationPacket>()
-            // .SetMessageHandler<SwivelRotationPacket>(OnServerSwivelRotation);
+
+            .RegisterMessageType<SwivelRotationPacket>()
+            .SetMessageHandler<SwivelRotationPacket>(OnServerSwivelRotation)
+            .RegisterMessageType<EntityTurretInputPacket>()
+            .SetMessageHandler<EntityTurretInputPacket>(OnServerEntityInputPacket)
         ;
     }
 
@@ -61,7 +65,9 @@ public partial class MainModSystem : ModSystem
             .RegisterMessageType<TurretStatePacket>()
             .SetMessageHandler<BESyncMessage>(message => SyncHelper.HandleSyncRequest(message, api, null))
             .SetMessageHandler<TurretStatePacket>(OnClientStatePacket)
-            // .RegisterMessageType<SwivelRotationPacket>()
+
+            .RegisterMessageType<SwivelRotationPacket>()
+            .RegisterMessageType<EntityTurretInputPacket>()
         ;
 
         api.Event.LevelFinalize += () =>
@@ -69,37 +75,13 @@ public partial class MainModSystem : ModSystem
             _ = new HudLoadProgress(api);
         };
         api.Input.RegisterHotKey($"{ModId}:TurretReload", "Reload Turret", GlKeys.R, HotkeyType.InventoryHotkeys);
-        api.Input.SetHotKeyHandler($"{ModId}:TurretReload", (a) => BEBehaviorTurretWeapon.OnReloadHotKeyPressed(a, api));
-    }
-
-    private void OnServerInputPacket(IServerPlayer player, TurretInputPacket packet)
-    {
-        if (_sapi == null) return;
-
-        var pos = BESyncMessage.UnpackPos(packet.PackedPos);
-        var be = _sapi.World.BlockAccessor.GetBlockEntity(pos);
-
-        if (be?.GetBehavior<BEBehaviorTurretWeapon>() is { } weapon)
-        {
-            weapon.HandleServerInput(packet.Action);
-        }
-    }
-
-    private void OnClientStatePacket(TurretStatePacket packet)
-    {
-        if (_capi == null) return;
-
-        var pos = BESyncMessage.UnpackPos(packet.PackedPos);
-        var be = _capi.World.BlockAccessor.GetBlockEntity(pos);
-
-        if (be?.GetBehavior<BEBehaviorTurretWeapon>() is { } weapon && be is BlockEntityTurret turret)
-        {
-            weapon.SetState(packet.State, turret);
-        }
+        api.Input.SetHotKeyHandler($"{ModId}:TurretReload", OnReloadHotKeyPressed);
     }
 
     public override void Dispose()
     {
+        if (Interlocked.Exchange(ref disposed, 1) == 1) return;
+
         _harmony?.UnpatchAll(PatchId);
         _harmony = null;
         base.Dispose();

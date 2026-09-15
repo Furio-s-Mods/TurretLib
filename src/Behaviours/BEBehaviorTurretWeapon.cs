@@ -94,10 +94,25 @@ public class BEBehaviorTurretWeapon(BlockEntity blockentity) : BEBehaviorTurretC
             ApplyStateAnimation(turret, State);
         }
 
+        // CONTINUOUS FRAME HOLD FOR LOADED STATE
+        if (State == TurretWeaponState.Loaded && turret.AnimUtil?.animator != null)
+        {
+            var animState = turret.AnimUtil.animator.GetAnimationState(Properties.LoadAnimationCode);
+            if (animState != null && animState.Animation != null)
+            {
+                if (!animState.Active)
+                {
+                    ApplyStateAnimation(turret, State);
+                }
+                // Continuously force the frame to the end every tick so animator.OnFrame() cannot reset it
+                animState.CurrentFrame = animState.Animation.QuantityFrames - 1;
+            }
+        }
+
         if (State != TurretWeaponState.Loading || !turret.IsLocallyControlled()) return;
 
-        var animState = turret.AnimUtil?.animator?.GetAnimationState(Properties.LoadAnimationCode);
-        if (animState != null && animState.AnimProgress >= 0.99f)
+        var loadingAnimState = turret.AnimUtil?.animator?.GetAnimationState(Properties.LoadAnimationCode);
+        if (loadingAnimState != null && loadingAnimState.AnimProgress >= 0.99f)
         {
             SendInputPacket(TurretInputAction.CompleteLoad);
         }
@@ -106,8 +121,7 @@ public class BEBehaviorTurretWeapon(BlockEntity blockentity) : BEBehaviorTurretC
     public void ApplyStateAnimation(BlockEntityTurret turret, TurretWeaponState state)
     {
         var animUtil = turret.AnimUtil;
-        if (animUtil?.animator == null) return;
-        if (Properties == null) return;
+        if (animUtil?.animator == null || Properties == null) return;
 
         switch (state)
         {
@@ -132,6 +146,16 @@ public class BEBehaviorTurretWeapon(BlockEntity blockentity) : BEBehaviorTurretC
                     Blockentity.Pos.X + 0.5, Blockentity.Pos.Y + 0.5, Blockentity.Pos.Z + 0.5, 
                     null, false, 20f, 1f
                 );
+
+                // Use normal speed so Active/Running remain true; OnWeaponTick clamps the frame
+                animUtil.StartAnimation(new AnimationMetaData
+                {
+                    Animation = Properties.LoadAnimationCode,
+                    Code = Properties.LoadAnimationCode,
+                    AnimationSpeed = 1f,
+                    EaseInSpeed = 9999f,
+                    EaseOutSpeed = 10f
+                });
                 break;
 
             case TurretWeaponState.Firing:
